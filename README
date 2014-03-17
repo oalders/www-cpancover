@@ -1,0 +1,62 @@
+NAME
+    WWW::CPANCover - Easy access to the CPANCover API
+
+VERSION
+    version 0.0000001
+
+SYNOPSIS
+        use WWW::CPANCover;
+
+        my $cover = WWW::CPANCover->new;
+        say $cover->report_url( 'ACL-Lite-0.0004' );
+        # returns http://cpancover.com/latest/ACL-Lite-0.0004/index.html
+
+DESCRIPTION
+    This module is a basic wrapper around the CPANCover API. By default it
+    caches the JSON returned by CPANCover in order to speed up subsequent
+    requests.
+
+NAME
+    WWW::CPANCover
+
+CONSTRUCTOR ARGUMENTS
+  cache
+    You may provide your own caching mechanism, provided it's a CHI object.
+
+        my $cache = CHI->new(
+            driver     => 'SharedMem',
+            expires_in => '1d',
+            size       => 256 * 1024,
+            shmkey     => 42,
+        );
+
+        my $cover = WWW::CPANCover->new(
+            cache => $cache
+        );
+
+  ua
+    You may provide your own UserAgent object, as long as it provides a
+    get() method. You may want to do this, for instance, to bypass the
+    caching layer.
+
+        my $cover = WWW::CPANCover->new(
+            ua => WWW::Mechanize->new
+        );
+
+  report_url( $release )
+    Requires a release name as its sole argument. Returns undef if no report
+    URL exists for this release.
+
+        my $cover = WWW::CPANCover->new;
+        say $cover->report_url( 'ACL-Lite-0.0004' );
+        # returns http://cpancover.com/latest/ACL-Lite-0.0004/index.html
+
+AUTHOR
+    Olaf Alders <olaf@wundercounter.com>
+
+COPYRIGHT AND LICENSE
+    This software is copyright (c) 2014 by Olaf Alders.
+
+    This is free software; you can redistribute it and/or modify it under
+    the same terms as the Perl 5 programming language system itself.
+
