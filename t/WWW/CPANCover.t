@@ -29,23 +29,27 @@ my $uri = file( '', $FindBin::Bin, '../', 'test-data', 'cpancover.json' );
 sub test_contents {
     my $cover       = shift;
     my $description = shift;
+    my $release     = 'ACL-Lite-0.0004';
 
     is_deeply(
         $cover->_current_reports,
-        { 'ACL-Lite-0.0004' => 1 },
+        { $release => 1 },
         'reports are available ' . $description
     );
-    ok( $cover->_has_report( 'ACL-Lite-0.0004' ),
-        'report exists ' . $description
-    );
+    ok( $cover->_has_report( $release ), 'report exists ' . $description );
 
     is_deeply(
         $cover->all_urls,
-        {   'ACL-Lite-0.0004' =>
-                'http://cpancover.com/latest/ACL-Lite-0.0004/index.html'
-        },
+        { $release => "http://cpancover.com/latest/$release/index.html" },
         'all_urls ' . $description
     );
+
+    is( $cover->report_url( $release ),
+        "http://cpancover.com/latest/$release/index.html",
+        'correct report_url for ' . $release
+    );
+    is( $cover->report_url( 'Foo' ),
+        undef, 'undef report_url when not found' );
 }
 
 done_testing();
