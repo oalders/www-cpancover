@@ -35,14 +35,15 @@ CONSTRUCTOR ARGUMENTS
         );
 
   ua
-    You may provide your own UserAgent object, as long as it provides a
-    get() method. You may want to do this, for instance, to bypass the
-    caching layer.
+    You may supply your own UserAgent object, as long as it provides a get()
+    method. You may want to do this, for instance, to bypass the caching
+    layer.
 
         my $cover = WWW::CPANCover->new(
             ua => WWW::Mechanize->new
         );
 
+METHODS
   report_url( $release )
     Requires a release name as its sole argument. Returns undef if no report
     URL exists for this release.
@@ -50,6 +51,10 @@ CONSTRUCTOR ARGUMENTS
         my $cover = WWW::CPANCover->new;
         say $cover->report_url( 'ACL-Lite-0.0004' );
         # returns http://cpancover.com/latest/ACL-Lite-0.0004/index.html
+
+  all_urls
+    Returns a HashRef of all available reports, keyed on release name with
+    the appropriate URLs as the values.
 
 AUTHOR
     Olaf Alders <olaf@wundercounter.com>

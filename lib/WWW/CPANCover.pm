@@ -3,15 +3,40 @@ use warnings;
 
 package WWW::CPANCover;
 
-use Carp qw( croak );
+use CHI::Driver::SharedMem; # for cpanfile
 use CHI;
+use Carp qw( croak );
 use Cpanel::JSON::XS;
 use Moose;
 use MooseX::StrictConstructor;
 use MooseX::Types::Moose qw( HashRef );
 use MooseX::Types::URI qw( Uri );
 use Try::Tiny;
+use WWW::Mechanize::Cached 1.43; # for cpanfile
 use WWW::Mechanize::Cached::GZip;
+
+has _current_reports => (
+    is      => 'ro',
+    isa     => HashRef,
+    traits  => ['Hash'],
+    handles => { _has_report => 'get', _all_releases => 'keys', },
+    lazy    => 1,
+    builder => '_build_current_reports',
+);
+
+has _uri => (
+    is      => 'ro',
+    isa     => Uri,
+    coerce  => 1,
+    default => 'http://cpancover.com/latest/cpancover.json',
+);
+
+has all_urls => (
+    is      => 'ro',
+    isa     => HashRef,
+    lazy    => 1,
+    builder => '_build_all_urls',
+);
 
 has cache => (
     is      => 'ro',
@@ -27,15 +52,6 @@ has cache => (
     },
 );
 
-has current_reports => (
-    is      => 'ro',
-    isa     => HashRef,
-    traits  => ['Hash'],
-    handles => { has_report => 'get', },
-    lazy    => 1,
-    builder => '_build_current_reports',
-);
-
 has ua => (
     is      => 'ro',
     isa     => 'WWW::Mechanize',
@@ -43,12 +59,6 @@ has ua => (
     builder => '_build_ua',
 );
 
-has _uri => (
-    is      => 'ro',
-    isa     => Uri,
-    coerce  => 1,
-    default => 'http://cpancover.com/latest/cpancover.json',
-);
 
 sub _build_ua {
     my $self = shift;
@@ -76,11 +86,20 @@ sub _build_current_reports {
     return $reports;
 }
 
+sub _build_all_urls {
+    my $self = shift;
+    my %urls = ();
+    foreach my $release ( $self->_all_releases ) {
+        $urls{$release} = $self->report_url( $release );
+    }
+    return \%urls;
+}
+
 sub report_url {
     my $self = shift;
     my $name = shift;
 
-    my $report = $self->has_report( $name );
+    my $report = $self->_has_report( $name );
     return if !$report;
     return "http://cpancover.com/latest/$name/index.html";
 }
@@ -128,13 +147,15 @@ You may provide your own caching mechanism, provided it's a CHI object.
 
 =head2 ua
 
-You may provide your own UserAgent object, as long as it provides a get()
+You may supply your own UserAgent object, as long as it provides a get()
 method.  You may want to do this, for instance, to bypass the caching layer.
 
     my $cover = WWW::CPANCover->new(
         ua => WWW::Mechanize->new
     );
 
+
+=head1 METHODS
 
 =head2 report_url( $release )
 
@@ -144,5 +165,10 @@ exists for this release.
     my $cover = WWW::CPANCover->new;
     say $cover->report_url( 'ACL-Lite-0.0004' );
     # returns http://cpancover.com/latest/ACL-Lite-0.0004/index.html
+
+=head2 all_urls
+
+Returns a HashRef of all available reports, keyed on release name with the
+appropriate URLs as the values.
 
 =cut

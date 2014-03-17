@@ -31,12 +31,20 @@ sub test_contents {
     my $description = shift;
 
     is_deeply(
-        $cover->current_reports,
+        $cover->_current_reports,
         { 'ACL-Lite-0.0004' => 1 },
         'reports are available ' . $description
     );
-    ok( $cover->has_report( 'ACL-Lite-0.0004' ),
+    ok( $cover->_has_report( 'ACL-Lite-0.0004' ),
         'report exists ' . $description
+    );
+
+    is_deeply(
+        $cover->all_urls,
+        {   'ACL-Lite-0.0004' =>
+                'http://cpancover.com/latest/ACL-Lite-0.0004/index.html'
+        },
+        'all_urls ' . $description
     );
 }
 
