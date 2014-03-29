@@ -5,6 +5,7 @@ use FindBin;
 use Path::Class qw( file );
 use Test::Most;
 use WWW::CPANCover;
+use WWW::Mechanize::Cached;
 use WWW::Mechanize;
 
 my $uri = file( '', $FindBin::Bin, '../', 'test-data', 'cpancover.json' );
@@ -21,9 +22,13 @@ my $uri = file( '', $FindBin::Bin, '../', 'test-data', 'cpancover.json' );
 
 {
     # assert that cache isn't exploding
-    my $cover = WWW::CPANCover->new( _uri => $uri );
+    my $cover = WWW::CPANCover->new(
+        _uri => $uri,
+        ua   => WWW::Mechanize::Cached->new,
+    );
 
     test_contents( $cover, 'with cache' );
+    test_contents( $cover, 'with warm cache' );
 }
 
 sub test_contents {

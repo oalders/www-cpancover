@@ -3,8 +3,6 @@ use warnings;
 
 package WWW::CPANCover;
 
-use CHI::Driver::SharedMem; # for cpanfile
-use CHI;
 use Carp qw( croak );
 use Cpanel::JSON::XS;
 use Moose;
@@ -12,8 +10,21 @@ use MooseX::StrictConstructor;
 use MooseX::Types::Moose qw( HashRef );
 use MooseX::Types::URI qw( Uri );
 use Try::Tiny;
-use WWW::Mechanize::Cached 1.43; # for cpanfile
-use WWW::Mechanize::Cached::GZip;
+use WWW::Mechanize::GZip;
+
+has all_urls => (
+    is      => 'ro',
+    isa     => HashRef,
+    lazy    => 1,
+    builder => '_build_all_urls',
+);
+
+has ua => (
+    is      => 'ro',
+    isa     => 'WWW::Mechanize',
+    lazy    => 1,
+    builder => '_build_ua',
+);
 
 has _current_reports => (
     is      => 'ro',
@@ -31,41 +42,9 @@ has _uri => (
     default => 'http://cpancover.com/latest/cpancover.json',
 );
 
-has all_urls => (
-    is      => 'ro',
-    isa     => HashRef,
-    lazy    => 1,
-    builder => '_build_all_urls',
-);
-
-has cache => (
-    is      => 'ro',
-    isa     => 'CHI::Driver::SharedMem',
-    lazy    => 1,
-    default => sub {
-        my $cache = CHI->new(
-            driver     => 'SharedMem',
-            expires_in => '1d',
-            size       => 256 * 1024,
-            shmkey     => 42,
-        );
-    },
-);
-
-has ua => (
-    is      => 'ro',
-    isa     => 'WWW::Mechanize',
-    lazy    => 1,
-    builder => '_build_ua',
-);
-
-
 sub _build_ua {
     my $self = shift;
-    return WWW::Mechanize::Cached::GZip->new(
-        autocheck => 0,
-        cache     => $self->cache
-    );
+    return WWW::Mechanize::GZip->new( autocheck => 0 );
 }
 
 sub _build_current_reports {
@@ -130,9 +109,10 @@ the JSON returned by CPANCover in order to speed up subsequent requests.
 
 =head1 CONSTRUCTOR ARGUMENTS
 
-=head2 cache
+=head2 ua
 
-You may provide your own caching mechanism, provided it's a CHI object.
+You may supply your own UserAgent object, as long as it ISA WWW::Mechanize and autocheck is disabled.
+You may want to do this, for instance, to add a caching layer.
 
     my $cache = CHI->new(
         driver     => 'SharedMem',
@@ -142,18 +122,8 @@ You may provide your own caching mechanism, provided it's a CHI object.
     );
 
     my $cover = WWW::CPANCover->new(
-        cache => $cache
+        ua => WWW::Mechanize::Cached::GZip->new( autocheck => 0, cache => $cache )
     );
-
-=head2 ua
-
-You may supply your own UserAgent object, as long as it provides a get()
-method.  You may want to do this, for instance, to bypass the caching layer.
-
-    my $cover = WWW::CPANCover->new(
-        ua => WWW::Mechanize->new
-    );
-
 
 =head1 METHODS
 
